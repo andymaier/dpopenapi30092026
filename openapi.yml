@@ -1,7 +1,14 @@
 openapi: '3.0.3'
 info:
   title: Katalog API
-  version: '1.0'
+  description: API zur Verwaltung des Artikelkatalogs.
+  version: '1.0.0'
+  x-api-id: 0b6c2c1e-8f4a-4d7e-9a3b-5c1d2e3f4a5b
+  x-audience: company-internal
+  contact:
+    name: Katalog API Team
+    url: https://api.dev.dp.com
+    email: katalog-api@dp.com
 servers:
   - url: localhost:50001
   - url: api.dev.dp.com
@@ -22,9 +29,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ArtikelResponseObject'
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ArtikelResponseObject'
+        default:
+          $ref: '#/components/responses/DefaultError'
     post:
       tags:
         - Shop
@@ -49,12 +61,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArtikelResponseObject'      
-        '4XX':
-          description: ClientError
+        '400':
+          description: Bad Request
           content:
-            application/json:
-              schema:                
-                $ref: '#/components/schemas/GenericErrorResponse'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        default:
+          $ref: '#/components/responses/DefaultError'
   /articles/{id}:
     parameters:
       - in: path
@@ -76,6 +90,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArtikelResponseObject'
+        default:
+          $ref: '#/components/responses/DefaultError'
 
     put:
       tags:
@@ -94,6 +110,8 @@ paths:
             application/json:
               schema:                
                 $ref: '#/components/schemas/ArtikelResponseObject'
+        default:
+          $ref: '#/components/responses/DefaultError'
     
     patch:
       tags:
@@ -112,6 +130,8 @@ paths:
             application/json:
               schema:                
                 $ref: '#/components/schemas/ArtikelResponseObject'
+        default:
+          $ref: '#/components/responses/DefaultError'
 
     delete:
       tags:
@@ -124,10 +144,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ArtikelResponseObject'      
+                $ref: '#/components/schemas/ArtikelResponseObject'
+        default:
+          $ref: '#/components/responses/DefaultError'
 
 
 components:
+  responses:
+    DefaultError:
+      description: Unerwarteter Fehler
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
   schemas:
     ArtikelId:
       type: string
@@ -152,31 +181,50 @@ components:
           example: 0.99
           description: Das ist der Preis des Artikels.
     ArtikelRequestObject:
+      type: object
       allOf:
         - $ref: '#/components/schemas/ArtikelBase'
-        - required:
+        - type: object
+          required:
             - name
             - preis
     ArtikelResponseObject:
+      type: object
       allOf:
         - $ref: '#/components/schemas/ArtikelBase'
-        - required:
+        - type: object
+          required:
             - id
             - name
             - preis
     ArtikelPatchRequestObject:
       $ref: '#/components/schemas/ArtikelBase'
-    GenericErrorResponse:
+    Problem:
       type: object
+      description: Fehlerobjekt nach RFC 7807 (Problem Details for HTTP APIs)
       properties:
-        id:
+        type:
           type: string
-          format: uuid
-          maxLength: 36
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-          description: ID des Errors
-        msg:
+          format: uri
+          example: https://api.dev.dp.com/problems/validation-error
+          description: URI, die den Fehlertyp identifiziert
+        title:
           type: string
-          maxLength: 10000
+          example: Validierungsfehler
+          description: Kurze, lesbare Zusammenfassung des Fehlertyps
+        status:
+          type: integer
+          format: int32
+          minimum: 100
+          maximum: 599
+          example: 400
+          description: HTTP-Statuscode
+        detail:
+          type: string
           example: Fehler weil...
           description: Fehlernachricht
+        instance:
+          type: string
+          format: uri
+          example: https://api.dev.dp.com/articles/3fa85f64-5717-4562-b3fc-2c963f66afa6
+          description: URI der konkreten Fehlerinstanz
