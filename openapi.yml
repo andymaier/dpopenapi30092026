@@ -1,0 +1,182 @@
+openapi: '3.0.3'
+info:
+  title: Katalog API
+  version: '1.0'
+servers:
+  - url: localhost:50001
+  - url: api.dev.dp.com
+  - url: api.prod.dp.com
+tags:
+  - name: Shop
+  - name: Customer
+paths:
+  /articles:
+    get:
+      tags:
+        - Shop
+      summary: Dieser Endpunkt gibt alle Artikel zurück
+      description: Alle Artikel werden zurückgegeben.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArtikelResponseObject'
+    post:
+      tags:
+        - Shop
+      summary: Lege einen neuen Artikel an
+      description: Ein neuer Artikel wird angelegt
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtikelRequestObject'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: URI des neuen Artikels
+              example: https://localhost:50001/articles/12
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtikelResponseObject'      
+        '4XX':
+          description: ClientError
+          content:
+            application/json:
+              schema:                
+                $ref: '#/components/schemas/GenericErrorResponse'
+  /articles/{id}:
+    parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+          maxLength: 36
+        required: true
+    get:
+      tags:
+        - Shop
+      summary: Dieser Endpunkt gibt einen Artikel zurück
+      description: Ein Artikel werden zurückgegeben.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtikelResponseObject'
+
+    put:
+      tags:
+        - Shop
+      summary: Dieser Endpunkt ändert einen Artikel
+      description: Ein Artikel wird geändert
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtikelRequestObject'
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema:                
+                $ref: '#/components/schemas/ArtikelResponseObject'
+    
+    patch:
+      tags:
+        - Shop
+      summary: Dieser Endpunkt ändert den Wert eines oder mehrerer Felder Artikel
+      description: Artikelfelder werden geändert
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtikelPatchRequestObject'
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema:                
+                $ref: '#/components/schemas/ArtikelResponseObject'
+
+    delete:
+      tags:
+        - Shop
+      summary: Dieser Endpunkt löscht einen Artikel zurück
+      description: Ein Artikel wird gelöscht.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtikelResponseObject'      
+
+
+components:
+  schemas:
+    ArtikelId:
+      type: string
+      format: uuid
+      maxLength: 36
+      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      description: Dies ist die Artikelid für die eindeutige Identifizierung
+    ArtikelBase:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ArtikelId'
+        name:
+          type: string
+          maxLength: 100
+          example: Kirschen
+          description: Das ist der Name des Artikels.
+        preis:
+          type: number
+          format: float
+          minimum: 0
+          example: 0.99
+          description: Das ist der Preis des Artikels.
+    ArtikelRequestObject:
+      allOf:
+        - $ref: '#/components/schemas/ArtikelBase'
+        - required:
+            - name
+            - preis
+    ArtikelResponseObject:
+      allOf:
+        - $ref: '#/components/schemas/ArtikelBase'
+        - required:
+            - id
+            - name
+            - preis
+    ArtikelPatchRequestObject:
+      $ref: '#/components/schemas/ArtikelBase'
+    GenericErrorResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          maxLength: 36
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          description: ID des Errors
+        msg:
+          type: string
+          maxLength: 10000
+          example: Fehler weil...
+          description: Fehlernachricht
